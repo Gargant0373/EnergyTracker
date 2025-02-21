@@ -19,5 +19,20 @@ This project provides a Python script that logs your NVIDIA GPU power consumptio
 1. **Clone the Repository:**
 
    ```bash
-   git clone <repository_url>
-   cd <repository_folder>
+   git clone https://github.com/Gargant0373/EnergyTracker
+   cd EnergyTracker
+   ```
+
+2. ** Run the project **
+
+   ```bash
+   python energy.py
+   ```
+
+   Consider running it in a screen for background usage:
+   ```bash
+   screen -R energy
+   ENTER
+   python energy.py
+   CTRL + A + D
+   ```
