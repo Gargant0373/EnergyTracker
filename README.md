@@ -23,7 +23,7 @@ This project provides a Python script that logs your NVIDIA GPU power consumptio
    cd EnergyTracker
    ```
 
-2. ** Run the project **
+2. **Run the project**
 
    ```bash
    python energy.py
