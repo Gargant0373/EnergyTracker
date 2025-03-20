@@ -1,6 +1,7 @@
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 def get_date_from_input(prompt_label="start"):
     now = datetime.datetime.now()
@@ -19,9 +20,9 @@ def get_date_from_input(prompt_label="start"):
         exit(1)
     return dt
 
-def main(start_date, end_date, desired_group_interval_seconds=None):
+def main(start_date, end_date, desired_group_interval_seconds=None, model="model"):
     # Load and filter the data
-    df = pd.read_csv("./data/gpu_power_log_1.csv")
+    df = pd.read_csv("./data/logs2.csv")
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
     mask = (df['Timestamp'] >= start_date) & (df['Timestamp'] <= end_date)
     df_filtered = df.loc[mask].copy()
@@ -32,8 +33,6 @@ def main(start_date, end_date, desired_group_interval_seconds=None):
     # Determine total duration and the grouping interval
     total_seconds = (df_filtered['Timestamp'].max() - df_filtered['Timestamp'].min()).total_seconds()
     if desired_group_interval_seconds is None:
-        # Default to 5 minutes (300 seconds) if duration is less than a day;
-        # otherwise, compute a dynamic interval aiming for ~200 groups
         if total_seconds < 24 * 3600:
             group_duration_seconds = 300
         else:
@@ -66,34 +65,43 @@ def main(start_date, end_date, desired_group_interval_seconds=None):
     min_power = df_grouped['Power (W)'].min()
     max_power = df_grouped['Power (W)'].max()
     total_energy_wh = df_grouped['Energy_Wh'].sum()
+    total_duration = total_seconds / 3600  # Convert total duration to hours
+
+    output_folder = "./output"
+    os.makedirs(output_folder, exist_ok=True)
+    stats_df = pd.DataFrame({
+        "Model": [model],
+        "Avg Power (W)": [avg_power],
+        "Min Power (W)": [min_power],
+        "Max Power (W)": [max_power],
+        "Total Energy (Wh)": [total_energy_wh],
+        "Total Duration (h)": [total_duration]
+    })
+    stats_df.to_csv(os.path.join(output_folder, f"stats_{model}.csv"), index=False)
 
     plt.figure(figsize=(10, 6))
     plt.plot(df_grouped.index, df_grouped['Power (W)'], marker='o')
     plt.xlabel('Timestamp')
     plt.ylabel('Average Power (W)')
-    plt.title('Power Usage (Grouped)')
+    plt.title('Power Usage ' + model)
     plt.xticks(rotation=45)
     textstr = (f'Avg: {avg_power:.2f} W\n'
                f'Min: {min_power:.2f} W\n'
                f'Max: {max_power:.2f} W\n'
-               f'Energy: {total_energy_wh:.2f} Wh')
+               f'Energy: {total_energy_wh:.2f} Wh\n'
+               f'Duration: {total_duration:.2f} h')
     plt.gcf().text(0.15, 0.75, textstr, fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
     plt.tight_layout()
     
-    plt.savefig("./plots/plot.png")
+    plt.savefig(os.path.join(output_folder, f"plot_{model}.png"))
     
     plt.show()
     
 
 if __name__ == '__main__':
-    print("Enter start date and time:")
-    start_date = get_date_from_input("start")
-    print("\nEnter end date and time:")
-    end_date = get_date_from_input("end")
-    group_input = input("Enter grouping interval in minutes (default dynamic, 5 minutes if duration < 1 day): ").strip()
-    if group_input:
-        desired_group_interval_seconds = int(float(group_input) * 60)
-    else:
-        desired_group_interval_seconds = None
+    start_date = pd.to_datetime("2025-03-14 22:43:51")
+    end_date = pd.to_datetime("2025-03-15 11:20:13")
+    model = "Phi"
+    desired_group_interval_seconds = 600
 
-    main(start_date, end_date, desired_group_interval_seconds)
+    main(start_date, end_date, desired_group_interval_seconds, model)
